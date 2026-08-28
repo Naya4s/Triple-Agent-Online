@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>Triple Agent</title>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+
+    <body>
+        <button id="settingsBtn">⚙️</button>
+
+        <div id="settingsPanel">
+            <h2>Settings</h2>
+            <button id="playerNameBtn">PLAYER NAME</button>
+        </div>
+
+        <div id="playerNamePopup" class="hidden">
+            <h2>PLAYER NAME</h2>
+            <input type="text" id="playerNameInput">
+            <button id="cancelNameBtn">CANCEL</button>
+            <button id="createNameBtn">CREATE</button>
+        </div>
+
+        <div id="homeScreen">
+            <h1>TRIPLE</h1>
+            <h1>AGENT</h1>
+            <button id="createGameBtn">CREATE</button>
+            <button id="joinGameBtn">JOIN</button>
+        </div>
+
+        <div id="joinCodePopup" class="hidden">
+            <h2>ENTER CODE</h2>
+            <input type="text" id="joinCodeInput" maxlength="6">
+            <button id="cancelCodeBtn">CANCEL</button>
+            <button id="joinCodeBtn">JOIN</button>
+        </div>
+
+        <div id="lobbyScreen" class="hidden">
+            <h2>Game Code: <span id="lobbyCode"></span></h2>
+            <ul id="lobbyPlayerList"></ul>
+        </div>
+
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="client.js"></script>
+    </body>
+</html>
