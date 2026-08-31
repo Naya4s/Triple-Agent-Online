@@ -7,19 +7,45 @@
     </head>
 
     <body>
-        <button id="settingsBtn">⚙️</button>
 
+        <button id="settingsBtn">⚙️</button>
         <div id="settingsPanel">
             <h2>Settings</h2>
-            <button id="playerNameBtn">PLAYER NAME</button>
+            <button id="loginBtn">LOG IN</button>
+            <button id="signupBtn">SIGN UP</button>
+            <button id="guestBtn">GUEST</button>
         </div>
 
-        <div id="playerNamePopup" class="hidden">
-            <h2>PLAYER NAME</h2>
-            <input type="text" id="playerNameInput">
-            <button id="cancelNameBtn">CANCEL</button>
-            <button id="createNameBtn">CREATE</button>
+        <div id="loginPopup" class="popup hidden">
+            <h2>LOG IN</h2>
+            <input type="text" id="loginPlayerNameInput" placeholder="PLAYER NAME">
+            <input type="password" id="loginPasswordInput" placeholder="PASSWORD">
+            <button id="cancelLoginBtn">CANCEL</button>
+            <button id="confirmLoginBtn">CONFIRM</button>
         </div>
+
+        <div id="signupPopup" class="popup hidden">
+            <h2>SIGN UP</h2>
+            <input type="text" id="signupPlayerNameInput" placeholder="PLAYER NAME">
+            <input type="password" id="signupPasswordInput" placeholder="PASSWORD">
+            <button id="cancelSignupBtn">CANCEL</button>
+            <button id="confirmSignupBtn">CONFIRM</button>
+        </div>
+
+        <div id="guestWarningPopup" class="popup hidden">
+            <p>Playing in guest mode is not recommended. Features such as saved player names and win tracking will be unavailable. Do you wish to continue?</p>
+            <button id="guestNoBtn">NO</button>
+            <button id="guestYesBtn">YES</button>
+        </div>
+
+        <div id="guestPlayerNamePopup" class="popup hidden">
+            <h2>PLAYER NAME</h2>
+            <input type="text" id="guestPlayerNameInput">
+            <button id="cancelPlayerNameBtn">CANCEL</button>
+            <button id="createPlayerNameBtn">CREATE</button>
+        </div>
+
+
 
         <div id="homeScreen">
             <h1>TRIPLE</h1>
@@ -28,7 +54,7 @@
             <button id="joinGameBtn">JOIN</button>
         </div>
 
-        <div id="joinCodePopup" class="hidden">
+        <div id="joinCodePopup" class="popup hidden">
             <h2>ENTER CODE</h2>
             <input type="text" id="joinCodeInput" maxlength="6">
             <button id="cancelCodeBtn">CANCEL</button>
@@ -38,6 +64,8 @@
         <div id="lobbyScreen" class="hidden">
             <h2>Game Code: <span id="lobbyCode"></span></h2>
             <ul id="lobbyPlayerList"></ul>
+            <button id="leaveLobbyBtn">LEAVE</button>
+            <button id="startLobbyBtn">START</button>
         </div>
 
 
