@@ -45,8 +45,6 @@
             <button id="createPlayerNameBtn">CREATE</button>
         </div>
 
-
-
         <div id="homeScreen">
             <h1>TRIPLE</h1>
             <h1>AGENT</h1>
@@ -67,6 +65,27 @@
             <button id="leaveLobbyBtn">LEAVE</button>
             <button id="startLobbyBtn">START</button>
         </div>
+
+        <div id="missionBriefingScreen" class="hidden">
+            <h2>Mission Briefing</h2>
+            <p id="missionBriefingText"></p>
+        </div>
+
+        <div id="serviceScreen" class="hidden">
+            <img src="assets/service.png" alt="Service logo">
+            <h3>For the moment you work for The Service.</h3>
+            <h3 id="serviceScreenVirusCountText"></h3>
+            <h3>To win, you must imprison one of them or anyone they recruit!</h3>
+        </div>
+
+        <div id="virusScreen" class="hidden">
+            <img src="assets/virus.png" alt="VIRUS logo">
+            <h3>For the moment you work for VIRUS. Your mission is to stay hidden and get the agents to imprison one of their own.</h3>
+            <h3 id="virusScreenVirusCountText"></h3>
+            <ul id="virusScreenVirusPlayers"></ul>
+        </div>
+
+        <button id="missionBriefingReadyBtn" class="hidden"></button>
 
 
         <script src="/socket.io/socket.io.js"></script>

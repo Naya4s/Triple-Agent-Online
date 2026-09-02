@@ -36,6 +36,5 @@ function usernameExists(username) {
     const row = db.prepare('SELECT * FROM players WHERE username = ?').get(username);
     return row !== undefined;
 }
-// const row = db.prepare('SELECT * FROM players WHERE username = ?').get('testUser4');
-// console.log(row);
+
 module.exports = { db, createAccount, verifyLogin, usernameExists };

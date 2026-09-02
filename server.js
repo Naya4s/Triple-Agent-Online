@@ -8,9 +8,6 @@ app.use(express.static('public'));
 const server = http.createServer(app);
 const io = new Server(server);
 
-let currentSession = null;
-let loggedInAccounts = {};
-
 function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -36,12 +33,12 @@ function isLoggedIn(socketId) {
 
 function allocatePlayerRoles(currentSession) {
 
-    const numOfPlayers = currentSession.players.length;
-    const virusCount = numOfPlayers <= 6 ? 2 : 3;
+    const playerCount = currentSession.players.length;
+    const virusCount = playerCount <= 6 ? 2 : 3;
 
     let virusPlayerIndex = [];
     while (virusPlayerIndex.length < virusCount) {
-        const randomIndex = randomInt(0, numOfPlayers-1);
+        const randomIndex = randomInt(0, playerCount-1);
 
         let validRandomIndex = true;
         virusPlayerIndex.forEach((index) => {
@@ -64,7 +61,13 @@ function allocatePlayerRoles(currentSession) {
             player.role = 'service';
         }
     });
+
+    return { playerCount, virusCount };
 }
+
+let currentSession = null;
+let loggedInAccounts = {};
+let missionBriefingReadiedPlayers = 0;
 
 io.on('connection', (socket) => {
     console.log('Client connected: '+ socket.id);
@@ -203,13 +206,48 @@ io.on('connection', (socket) => {
         }
 
         currentSession.status = 'inProgress';
-        allocatePlayerRoles(currentSession);
+        const {playerCount, virusCount } = allocatePlayerRoles(currentSession);
 
+        let virusPlayerNames = [];
         currentSession.players.forEach((player) => {
-            io.to(player.id).emit('roleAssigned', player.role);
+            if (player.role === 'virus') {
+                virusPlayerNames.push(player.name);
+            }
         });
 
-        io.emit('sessionUpdated', currentSession, 'started');
+        currentSession.players.forEach((player) => {
+            if (player.role === 'virus') {
+                io.to(player.id).emit('virusPlayers', player.name, virusPlayerNames);
+            }
+        });
+
+        currentSession.players.forEach((player) => {
+            io.to(player.id).emit('roleAssigned', player.role, playerCount, virusCount);
+        });
+
+        const safeCurrentSession = {
+            code: currentSession.code,
+            status: currentSession.status,
+            players: currentSession.players.map(player => ({ id: player.id, name: player.name}))
+        };
+
+        io.emit('sessionUpdated', safeCurrentSession, 'started');
+    });
+
+    socket.on('missionBriefingPlayerIsReady', () => {
+        missionBriefingReadiedPlayers++
+        const playerCount = currentSession.players.length;
+
+        currentSession.players.forEach((player) => {
+            io.to(player.id).emit('missionBriefingReadyIncremented', missionBriefingReadiedPlayers);
+        });
+
+        if (missionBriefingReadiedPlayers > (playerCount * 0.5)) {
+            currentSession.players.forEach((player) => {
+                io.to(player.id).emit('missionBriefingReadySuccess')
+            });
+            missionBriefingReadiedPlayers = 0;
+        }
     });
 
 });

@@ -148,6 +148,11 @@ socket.on('sessionUpdated', (currentSession, sessionChange, leavingPlayerName) =
                     }
                 });
             }
+
+            if (sessionChange === 'started') {
+
+            }
+
         }
     }
 });
@@ -209,4 +214,74 @@ leaveLobbyBtn.addEventListener('click', () => {
 
 startLobbyBtn.addEventListener('click', () => {
     socket.emit('startGame');
+});
+
+const missionBriefingScreen = document.getElementById('missionBriefingScreen');
+const missionBriefingText = document.getElementById('missionBriefingText');
+
+let initialMissionBriefingReadiedPlayers = 0;
+const missionBriefingReadyBtn = document.getElementById('missionBriefingReadyBtn');
+
+const serviceScreen = document.getElementById('serviceScreen');
+const serviceScreenVirusCountText = document.getElementById('serviceScreenVirusCountText');
+const virusScreen = document.getElementById('virusScreen');
+const virusScreenVirusCountText = document.getElementById('virusScreenVirusCountText');
+const virusScreenVirusPlayers = document.getElementById('virusScreenVirusPlayers');
+
+socket.on('virusPlayers', (thisVirusName, virusPlayerNames) => {
+    virusScreenVirusPlayers.textContent = '';
+    virusPlayerNames.forEach((virusPlayerName) => {
+        if (virusPlayerName !== thisVirusName) {
+            const li = document.createElement('li');
+            li.textContent = virusPlayerName;
+            virusScreenVirusPlayers.appendChild(li);
+        }
+    });
+});
+
+let globalPlayerCount;
+
+socket.on('roleAssigned', (role, playerCount, virusCount) => {
+    globalPlayerCount = playerCount;
+    lobbyScreen.classList.add('hidden');
+
+    missionBriefingText.textContent = `You’ve received intelligence that ${virusCount} of the ${playerCount} of you are double agents working for VIRUS! ` +
+        'Your briefing will tell you which agency you work for and your objective. You can only imprison one person so make sure it’s the right one. ' +
+        'Remember each other’s names, review the agency logos, and figure out who is lying about who they are.';
+    missionBriefingScreen.classList.remove('hidden');
+
+    missionBriefingReadyBtn.textContent = `READY (${initialMissionBriefingReadiedPlayers}/${playerCount})`
+
+    serviceScreenVirusCountText.textContent = `There are ${virusCount} VIRUS agents.`;
+    if (virusCount > 2) {
+        virusScreenVirusCountText.textContent = `There are ${virusCount - 1} other VIRUS agents working with you.`;
+    } else {
+        virusScreenVirusCountText.textContent = `There is ${virusCount - 1} other VIRUS agent working with you.`;
+    }
+
+    setTimeout(() => {
+        missionBriefingScreen.classList.add('hidden');
+        missionBriefingReadyBtn.classList.remove('hidden');
+
+        if (role === 'service') {
+            serviceScreen.classList.remove('hidden');
+        } else if (role === 'virus') {
+            virusScreen.classList.remove('hidden');
+        }
+
+    }, 5000);
+});
+
+missionBriefingReadyBtn.addEventListener('click', () => {
+    socket.emit('missionBriefingPlayerIsReady');
+    missionBriefingReadyBtn.disabled = true;
+});
+
+socket.on('missionBriefingReadyIncremented', (missionBriefingReadiedPlayers) => {
+    missionBriefingReadyBtn.textContent = `READY (${missionBriefingReadiedPlayers}/${globalPlayerCount})`
+});
+
+socket.on('missionBriefingReadySuccess', () => {
+    // MOVE ONTO OPERATIONS PHASE
+
 });
