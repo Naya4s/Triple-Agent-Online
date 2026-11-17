@@ -52,16 +52,134 @@ function allocatePlayerRoles(currentSession) {
     }
 
     virusPlayerIndex.forEach((index) => {
-        currentSession.players[index].role = 'virus';
+        currentSession.players[index].startingRole = 'virus';
+        currentSession.players[index].currentRole = 'virus';
     });
 
     currentSession.players.forEach((player) => {
-        if (player.role === null) {
-            player.role = 'service';
+        if (player.startingRole === null) {
+            player.startingRole = 'service';
+            player.currentRole = 'service';
         }
     });
 
     return { playerCount, virusCount };
+}
+
+function AnonymousTip(currPlayerID, currentSession) {
+    let otherPlayerIDs = []
+    currentSession.players.forEach((player) => {
+        if (player.id !== currPlayerID) {
+            otherPlayerIDs.push(player.id);
+        }
+    });
+
+    let tippedPlayerID = otherPlayerIDs[Math.floor(Math.random() * otherPlayerIDs.length)];
+
+    let tippedPlayerName;
+    let tippedPlayerRole;
+    currentSession.players.forEach((player) => {
+        if (player.id === tippedPlayerID) {
+            tippedPlayerName = player.name;
+            tippedPlayerRole = player.currentRole;
+        }
+    });
+
+    return { tippedPlayerName, tippedPlayerRole };
+}
+
+function DanishIntelligence(currPlayerID, currentSession) {
+    let otherServiceIDs = []
+    let otherVirusIDs = []
+
+    currentSession.players.forEach((player) => {
+        if (player.id !== currPlayerID) {
+
+            if (player.currentRole === 'service') {
+                otherServiceIDs.push(player.id);
+            } else {
+                otherVirusIDs.push(player.id);
+            }
+        }
+    });
+
+    let tippedServiceID = otherServiceIDs[Math.floor(Math.random() * otherServiceIDs.length)];
+    let tippedVirusID;
+
+    if (otherVirusIDs.length === 0) {
+        tippedVirusID = currPlayerID;
+    } else {
+        tippedVirusID = otherVirusIDs[Math.floor(Math.random() * otherVirusIDs.length)];
+    }
+
+    let tippedServiceName;
+    let tippedVirusName;
+    currentSession.players.forEach((player) => {
+        if (player.id === tippedServiceID) {
+            tippedServiceName = player.name;
+        } else if (player.id === tippedVirusID) {
+            tippedVirusName = player.name;
+        }
+    });
+
+    const tippedPlayerNames = [tippedServiceName, tippedVirusName];
+    if (Math.random() < 0.5) {
+        tippedPlayerNames.reverse();
+    }
+
+    return tippedPlayerNames;
+}
+
+function OldPhotographs(currentSession) {
+    let playerIDsOfTippedRole = [];
+    const binaryTippedRole = Math.floor(Math.random() * 2);
+    const tippedRole = randomInt(0, 1) === 0 ? 'service' : 'virus';
+
+    currentSession.players.forEach((player) => {
+        if (player.startingRole === tippedRole) {
+            playerIDsOfTippedRole.push(player.id);
+        }
+    });
+
+    let selectedIndexesOfTippedRole = [];
+
+    let indexedPlayer = randomInt(0, playerIDsOfTippedRole.length - 1);
+    selectedIndexesOfTippedRole.push(indexedPlayer);
+    while (selectedIndexesOfTippedRole.includes(indexedPlayer)) {
+        indexedPlayer = randomInt(0, playerIDsOfTippedRole.length - 1);
+    }
+    selectedIndexesOfTippedRole.push(indexedPlayer);
+
+    const selectedPlayerIDsOfTippedRole = [playerIDsOfTippedRole[selectedIndexesOfTippedRole[0]], playerIDsOfTippedRole[selectedIndexesOfTippedRole[1]]];
+    let tippedPlayerNames = [];
+    currentSession.players.forEach((player) => {
+        if (player.id === selectedPlayerIDsOfTippedRole[0] || player.id === selectedPlayerIDsOfTippedRole[1]) {
+            tippedPlayerNames.push(player.name);
+        }
+    });
+
+    return tippedPlayerNames;
+}
+
+function Confession(currPlayerID, currentSession){
+    let currPlayerName;
+    let currPlayerRole;
+    currentSession.players.forEach((player) => {
+        if (player.id === currPlayerID) {
+            currPlayerName = player.name;
+            currPlayerRole = player.currentRole;
+        }
+    });
+
+    return {currPlayerName, currPlayerRole};
+}
+
+function SecretIntel() {
+
+}
+
+function HiddenAgenda() {
+
 }
 
 let currentSession = null;
@@ -137,10 +255,11 @@ io.on('connection', (socket) => {
             return;
         }
 
+        // CURRENT SESSION BLUEPRINT
         currentSession = {
             code: generateCode(),
             status: 'waiting',
-            players: [{ id: socket.id, name: playerName, role: null}]
+            players: [{ id: socket.id, name: playerName, startingRole: null, currentRole: null }],
         };
 
         socket.emit('joining');
@@ -174,7 +293,7 @@ io.on('connection', (socket) => {
             return;
         }
 
-        currentSession.players.push({ id: socket.id, name: playerName, role: null });
+        currentSession.players.push({ id: socket.id, name: playerName, startingRole: null , currentRole: null });
 
         socket.emit('joining');
         io.emit('sessionUpdated', currentSession, 'joined');
@@ -209,19 +328,19 @@ io.on('connection', (socket) => {
 
         let virusPlayerNames = [];
         currentSession.players.forEach((player) => {
-            if (player.role === 'virus') {
+            if (player.startingRole === 'virus') {
                 virusPlayerNames.push(player.name);
             }
         });
 
         currentSession.players.forEach((player) => {
-            if (player.role === 'virus') {
+            if (player.startingRole === 'virus') {
                 io.to(player.id).emit('virusPlayers', player.name, virusPlayerNames);
             }
         });
 
         currentSession.players.forEach((player) => {
-            io.to(player.id).emit('roleAssigned', player.role, playerCount, virusCount);
+            io.to(player.id).emit('roleAssigned', player.startingRole, playerCount, virusCount);
         });
 
         const safeCurrentSession = {
