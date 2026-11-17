@@ -281,7 +281,19 @@ socket.on('missionBriefingReadyIncremented', (missionBriefingReadiedPlayers) => 
     missionBriefingReadyBtn.textContent = `READY (${missionBriefingReadiedPlayers}/${globalPlayerCount})`
 });
 
-socket.on('missionBriefingReadySuccess', () => {
-    // MOVE ONTO OPERATIONS PHASE
+const operationsPhaseScreen = document.getElementById('operationsPhaseScreen');
+const operationsPhaseText = document.getElementById('operationsPhaseText');
+operationsPhaseText.textContent = 'Each person will be given one operation before you move on to the Accusation Phase.';
 
+socket.on('missionBriefingReadySuccess', () => {
+    missionBriefingReadyBtn.classList.add('hidden');
+    serviceScreen.classList.add('hidden');
+    virusScreen.classList.add('hidden');
+
+    operationsPhaseScreen.classList.remove('hidden');
+    setTimeout(() => {
+        operationsPhaseScreen.classList.add('hidden');
+    }, 5000);
+
+    socket.emit('operationsPhaseCompleted');
 });

@@ -32,7 +32,6 @@ function isLoggedIn(socketId) {
 }
 
 function allocatePlayerRoles(currentSession) {
-
     const playerCount = currentSession.players.length;
     const virusCount = playerCount <= 6 ? 2 : 3;
 
@@ -249,6 +248,8 @@ io.on('connection', (socket) => {
             missionBriefingReadiedPlayers = 0;
         }
     });
+
+
 
 });
 
