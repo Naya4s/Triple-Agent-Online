@@ -66,6 +66,7 @@ function allocatePlayerRoles(currentSession) {
     return { playerCount, virusCount };
 }
 
+// Anonymous Tip reveals the agency of a random player.
 function AnonymousTip(currPlayerID, currentSession) {
     let otherPlayerIDs = []
     currentSession.players.forEach((player) => {
@@ -88,6 +89,7 @@ function AnonymousTip(currPlayerID, currentSession) {
     return { tippedPlayerName, tippedPlayerRole };
 }
 
+// Danish Intelligence reveals that between 2 random players, one is virus and one is not.
 function DanishIntelligence(currPlayerID, currentSession) {
     let otherServiceIDs = []
     let otherVirusIDs = []
@@ -130,6 +132,7 @@ function DanishIntelligence(currPlayerID, currentSession) {
     return tippedPlayerNames;
 }
 
+// OldPhotographs reveals 2 random players that worked for the same agency at the start of the game.
 function OldPhotographs(currentSession) {
     let playerIDsOfTippedRole = [];
     const binaryTippedRole = Math.floor(Math.random() * 2);
@@ -161,6 +164,7 @@ function OldPhotographs(currentSession) {
     return tippedPlayerNames;
 }
 
+// Confession reveals the player's agency to another player of choice.
 function Confession(currPlayerID, currentSession){
     let currPlayerName;
     let currPlayerRole;
@@ -174,11 +178,139 @@ function Confession(currPlayerID, currentSession){
     return {currPlayerName, currPlayerRole};
 }
 
-function SecretIntel() {
+// Secret Intel reveals whether either of 2 selected players work for the virus.
+function SecretIntel(player1ID, player2ID, currentSession) {
+    let player1Name;
+    let player1Role;
+    let player2Name;
+    let player2Role;
 
+    currentSession.players.forEach((player) => {
+        if (player.id === player1ID) {
+            player1Name = player.name;
+            player1Role = player.currentRole;
+
+        } else if (player.id === player2ID) {
+            player2Name = player.name;
+            player2Role = player.currentRole;
+        }
+    });
+
+    let secretIntelMessage;
+    if (player1Role === 'virus' || player2Role === 'virus') {
+        secretIntelMessage = 'The intel reveals that at least one of them is a VIRUS agent!'
+    } else {
+        secretIntelMessage = 'The intel reveals that both agents are loyal to The Service'
+    }
+
+    return {player1Name, player2Name, secretIntelMessage};
 }
 
-function HiddenAgenda() {
+function OperationScapeGoat(currPlayerID, currentSession) {
+    currentSession.players.forEach((player) => {
+        if (player.id === currPlayerID) {
+            player.scapeGoat == true;
+        }
+    });
+}
+
+function Grudge(currPlayerID, currentSession) {
+    let otherPlayerIDs = [];
+    currentSession.players.forEach((player) => {
+        if (player.id !== currPlayerID) {
+            otherPlayerIDs.push(player.id);
+        }
+    });
+
+    const grudgedPlayerID = otherPlayerIDs[Math.floor(Math.random() * otherPlayerIDs.length)];
+    let grudgedPlayerName;
+    currentSession.players.forEach((player) => {
+        if (player.id === grudgedPlayerID) {
+            grudgedPlayerName = player.name;
+        } else if (player.id === currPlayerID) {
+            player.grudge = grudgedPlayerID;
+        }
+    });
+
+    return grudgedPlayerName;
+}
+
+function Infatuation(currPlayerID, currentSession) {
+    let otherPlayerIDs = [];
+    currentSession.players.forEach((player) => {
+        if (player.id !== currPlayerID) {
+            otherPlayerIDs.push(player.id);
+        }
+    });
+
+    const infatuatedPlayerID = otherPlayerIDs[Math.floor(Math.random() * otherPlayerIDs.length)];
+    let infatuatedPlayerName;
+    currentSession.players.forEach((player) => {
+        if (player.id === infatuatedPlayerID) {
+            infatuatedPlayerName = player.name;
+        } else if (player.id === currPlayerID) {
+            player.infatuation = infatuatedPlayerID;
+        }
+    });
+
+    return infatuatedPlayerName;
+}
+
+function SleeperAgent(currPlayerID, currentSession) {
+    let currentRole;
+    let currPlayerName;
+    currentSession.players.forEach((player) => {
+        if (player.id === currPlayerID) {
+            currPlayerName = player.name;
+            currentRole = player.currentRole;
+        }
+    });
+
+    const newRole = currentRole === 'service' ? 'virus' : 'service';
+    currentSession.players.forEach((player) => {
+        if (player.id === currPlayerID) {
+            player.currentRole = newRole;
+        }
+    });
+
+    return currPlayerName;
+}
+
+//TODO: OPERATION FUNCTIONS NEED ASSIGNING TO VARIABLES
+function HiddenAgenda(currPlayerID, currentSession) {
+    const subOperations = ['operationScapeGoat', 'grudge', 'infatuation', 'sleeperAgent', 'secretTip'];
+    const selectedSubOperation = subOperations[Math.floor(Math.random() * subOperations.length)];
+
+    switch (selectedSubOperation) {
+        case 'operationScapeGoat': OperationScapeGoat(currPlayerID, currentSession);
+            break;
+        case 'grudge': Grudge(currPlayerID, currentSession);
+            break;
+        case 'infatuation': Infatuation(currPlayerID, currentSession);
+            break;
+        case 'sleeperAgent': SleeperAgent(currPlayerID, currentSession);
+            break;
+        case 'secretTip': AnonymousTip(currPlayerID, currentSession);
+            break;
+    }
+}
+
+function SelectOperation(currPlayerID, currentSession) {
+    const operations = ['anonymousTip', 'danishIntelligence', 'oldPhotographs', 'confession', 'secretIntel'];
+    const selectedOperation = operations[Math.floor(Math.random() * operations.length)];
+
+    switch (selectedOperation) {
+        case 'anonymousTip': AnonymousTip(currPlayerID, currentSession);
+            break;
+        case 'danishIntelligence': DanishIntelligence(currPlayerID, currentSession);
+            break;
+        case 'oldPhotographs': OldPhotographs(currentSession);
+            break;
+        case 'confession': Confession(currPlayerID, currentSession);
+            break;
+        case 'secretIntel': SecretIntel(player1ID, player2ID, currentSession);
+            break;
+    }
 
 }
 
@@ -259,7 +391,7 @@ io.on('connection', (socket) => {
         currentSession = {
             code: generateCode(),
             status: 'waiting',
-            players: [{ id: socket.id, name: playerName, startingRole: null, currentRole: null }],
+            players: [{ id: socket.id, name: playerName, startingRole: null, currentRole: null , scapeGoat: false, grudge: null, infatuation: null}]
         };
 
         socket.emit('joining');
@@ -293,7 +425,7 @@ io.on('connection', (socket) => {
             return;
         }
 
-        currentSession.players.push({ id: socket.id, name: playerName, startingRole: null , currentRole: null });
+        currentSession.players.push({ id: socket.id, name: playerName, startingRole: null , currentRole: null , scapeGoat: false , grudge: null, infatuation: null });
 
         socket.emit('joining');
         io.emit('sessionUpdated', currentSession, 'joined');
