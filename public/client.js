@@ -295,5 +295,5 @@ socket.on('missionBriefingReadySuccess', () => {
         operationsPhaseScreen.classList.add('hidden');
     }, 5000);
 
-    socket.emit('operationsPhaseCompleted');
+    socket.emit('commenceOperationsPhase');
 });

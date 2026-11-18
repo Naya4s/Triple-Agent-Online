@@ -86,6 +86,7 @@ function AnonymousTip(currPlayerID, currentSession) {
         }
     });
 
+    // Returns the tipped player's name and role for current player.
     return { tippedPlayerName, tippedPlayerRole };
 }
 
@@ -129,13 +130,13 @@ function DanishIntelligence(currPlayerID, currentSession) {
         tippedPlayerNames.reverse();
     }
 
+    // Returns the 2 random players' names.
     return tippedPlayerNames;
 }
 
 // OldPhotographs reveals 2 random players that worked for the same agency at the start of the game.
 function OldPhotographs(currentSession) {
     let playerIDsOfTippedRole = [];
-    const binaryTippedRole = Math.floor(Math.random() * 2);
     const tippedRole = randomInt(0, 1) === 0 ? 'service' : 'virus';
 
     currentSession.players.forEach((player) => {
@@ -161,6 +162,7 @@ function OldPhotographs(currentSession) {
         }
     });
 
+    // Returns the 2 random players' names.
     return tippedPlayerNames;
 }
 
@@ -175,6 +177,7 @@ function Confession(currPlayerID, currentSession){
         }
     });
 
+    // Returns the current player's name and role for confession.
     return {currPlayerName, currPlayerRole};
 }
 
@@ -203,17 +206,20 @@ function SecretIntel(player1ID, player2ID, currentSession) {
         secretIntelMessage = 'The intel reveals that both agents are loyal to The Service'
     }
 
+    // Returns the 2 selected players' names and the corresponding display message.
     return {player1Name, player2Name, secretIntelMessage};
 }
 
+// Operation Scapegoat alters the player's win condition; they only win if they get voted out, in which case everyone else loses.
 function OperationScapeGoat(currPlayerID, currentSession) {
     currentSession.players.forEach((player) => {
         if (player.id === currPlayerID) {
-            player.scapeGoat == true;
+            player.scapeGoat = true;
         }
     });
 }
 
+// Grudge alters the player's win condition; they only win if the allocated player is imprisoned.
 function Grudge(currPlayerID, currentSession) {
     let otherPlayerIDs = [];
     currentSession.players.forEach((player) => {
@@ -232,9 +238,11 @@ function Grudge(currPlayerID, currentSession) {
         }
     });
 
+    // Returns the current player's name.
     return grudgedPlayerName;
 }
 
+// Infatuation alters the player's win condition; they only win if the allocated player wins.
 function Infatuation(currPlayerID, currentSession) {
     let otherPlayerIDs = [];
     currentSession.players.forEach((player) => {
@@ -253,9 +261,11 @@ function Infatuation(currPlayerID, currentSession) {
         }
     });
 
+    // Returns the current player's name.
     return infatuatedPlayerName;
 }
 
+// SleepAgent alters the player's win condition; they now work for the other agency.
 function SleeperAgent(currPlayerID, currentSession) {
     let currentRole;
     let currPlayerName;
@@ -273,6 +283,7 @@ function SleeperAgent(currPlayerID, currentSession) {
         }
     });
 
+    // Returns the current player's name.
     return currPlayerName;
 }
 
@@ -282,36 +293,33 @@ function HiddenAgenda(currPlayerID, currentSession) {
     const selectedSubOperation = subOperations[Math.floor(Math.random() * subOperations.length)];
 
     switch (selectedSubOperation) {
-        case 'operationScapeGoat': OperationScapeGoat(currPlayerID, currentSession);
-            break;
-        case 'grudge': Grudge(currPlayerID, currentSession);
-            break;
-        case 'infatuation': Infatuation(currPlayerID, currentSession);
-            break;
-        case 'sleeperAgent': SleeperAgent(currPlayerID, currentSession);
-            break;
-        case 'secretTip': AnonymousTip(currPlayerID, currentSession);
-            break;
+        case 'operationScapeGoat':
+            return OperationScapeGoat(currPlayerID, currentSession);
+        case 'grudge':
+            return Grudge(currPlayerID, currentSession);
+        case 'infatuation':
+            return Infatuation(currPlayerID, currentSession);
+        case 'sleeperAgent':
+            return SleeperAgent(currPlayerID, currentSession);
+        case 'secretTip':
+            return AnonymousTip(currPlayerID, currentSession);
     }
 }
 
-function SelectOperation(currPlayerID, currentSession) {
-    const operations = ['anonymousTip', 'danishIntelligence', 'oldPhotographs', 'confession', 'secretIntel'];
-    const selectedOperation = operations[Math.floor(Math.random() * operations.length)];
+function allocateOperations(currentSession) {
+    const startOperations = ['anonymousTip', 'danishIntelligence', 'oldPhotographs', 'confession', 'secretIntel', 'hiddenAgenda'];
+    let currentOperations = [...startOperations];
 
-    switch (selectedOperation) {
-        case 'anonymousTip': AnonymousTip(currPlayerID, currentSession);
-            break;
-        case 'danishIntelligence': DanishIntelligence(currPlayerID, currentSession);
-            break;
-        case 'oldPhotographs': OldPhotographs(currentSession);
-            break;
-        case 'confession': Confession(currPlayerID, currentSession);
-            break;
-        case 'secretIntel': SecretIntel(player1ID, player2ID, currentSession);
-            break;
-    }
+    currentSession.players.forEach((player) => {
+        const selectedOperationIndex = Math.floor(Math.random() * currentOperations.length);
+        const selectedOperation = currentOperations[selectedOperationIndex];
+        currentOperations.splice(selectedOperationIndex, 1);
+        if (currentOperations.length === 0) {
+            currentOperations = [...startOperations];
+        }
 
+        player.operation = selectedOperation;
+    });
 }
 
 let currentSession = null;
@@ -391,7 +399,7 @@ io.on('connection', (socket) => {
         currentSession = {
             code: generateCode(),
             status: 'waiting',
-            players: [{ id: socket.id, name: playerName, startingRole: null, currentRole: null , scapeGoat: false, grudge: null, infatuation: null}]
+            players: [{ id: socket.id, name: playerName, startingRole: null, currentRole: null , operation: null, scapeGoat: false, grudge: null, infatuation: null}]
         };
 
         socket.emit('joining');
@@ -425,7 +433,7 @@ io.on('connection', (socket) => {
             return;
         }
 
-        currentSession.players.push({ id: socket.id, name: playerName, startingRole: null , currentRole: null , scapeGoat: false , grudge: null, infatuation: null });
+        currentSession.players.push({ id: socket.id, name: playerName, startingRole: null , currentRole: null , operation: null, scapeGoat: false , grudge: null, infatuation: null });
 
         socket.emit('joining');
         io.emit('sessionUpdated', currentSession, 'joined');
@@ -498,6 +506,13 @@ io.on('connection', (socket) => {
             });
             missionBriefingReadiedPlayers = 0;
         }
+    });
+
+    socket.on('commenceOperationsPhase', () => {
+        allocateOperations(currentSession);
+        currentSession.players.forEach((player) => {
+            player.operation
+        });
     });
 
 
