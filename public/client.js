@@ -295,5 +295,125 @@ socket.on('missionBriefingReadySuccess', () => {
         operationsPhaseScreen.classList.add('hidden');
     }, 5000);
 
-    socket.emit('commenceOperationsPhase');
+});
+
+socket.on('operationTurn', (operation, playerID) => {
+    if (socket.id !== playerID) {
+        return;
+    }
+
+    switch (operation) {
+        case 'anonymousTip':
+            socket.emit('requestAnonymousTip', playerID);
+            break;
+
+        case 'danishIntelligence':
+            socket.emit('requestDanishIntelligence', playerID);
+            break;
+
+        case 'oldPhotographs':
+            socket.emit('requestOldPhotographs', playerID);
+            break;
+
+        case 'confession':
+            socket.emit('requestConfession', playerID);
+            break;
+
+        case 'secretIntel':
+            socket.emit('requestSecretIntel', playerID);
+            break;
+
+        case 'hiddenAgenda':
+            socket.emit('requestHiddenAgenda', playerID);
+            break;
+    }
+});
+
+const waitingOperationScreen = document.getElementById('waitingOperationScreen');
+
+const anonymousTipScreen = document.getElementById('anonymousTipScreen');
+const anonymousTipPlayerName = document.getElementById('anonymousTipPlayerName');
+const anonymousTipPublicMessage = document.getElementById('anonymousTipPublicMessage');
+const anonymousTipPrivateScreen = document.getElementById('anonymousTipPrivateScreen');
+const anonymousTipPrivateMessage = document.getElementById('anonymousTipPrivateMessage');
+const anonymousTipAgencyLogo = document.getElementById('anonymousTipAgencyLogo');
+
+socket.on('publicAnonymousTip', (playerName) => {
+    anonymousTipPlayerName.textContent = playerName;
+    if (playerName.at(-1) === 's') {
+        anonymousTipPublicMessage.textContent = playerName + '’ source knows the agency of one other agent and reveals it to them.';
+    } else {
+        anonymousTipPublicMessage.textContent = playerName + '’s source knows the agency of one other agent and reveals it to them.';
+    }
+    anonymousTipScreen.classList.remove('hidden');
+    anonymousTipPublicMessage.classList.remove('hidden');
+});
+
+socket.on('privateAnonymousTip', (playerName, tippedPlayerName, tippedPlayerRole) => {
+    setTimeout(() => {
+        anonymousTipPublicMessage.classList.add('hidden');
+        }, 5000);
+
+    anonymousTipPrivateMessage.textContent = 'After meeting your source at a very remote location, they finally spill the beans. You now know that ' + tippedPlayerName + ' works for:';
+    anonymousTipAgencyLogo.src = `assets/${tippedPlayerRole}.png`;
+    anonymousTipAgencyLogo.alt = tippedPlayerRole === 'service' ? 'Service Logo' : 'VIRUS Logo';
+    anonymousTipPrivateScreen.classList.remove('hidden');
+
+    setTimeout(() => {
+        anonymousTipPrivateScreen.classList.add('hidden');
+        socket.emit('requestFinishAnonymousTip');
+    }, 5000);
+});
+
+socket.on('finishAnonymousTip', () => {
+    anonymousTipScreen.classList.add('hidden');
+    anonymousTipPublicMessage.classList.add('hidden');
+    waitingOperationScreen.classList.remove('hidden');
+    setTimeout(() => {
+        waitingOperationScreen.classList.add('hidden');
+    }, 5000);
+
+    socket.emit('currentOperationCompleted');
+});
+
+const danishIntelligenceScreen = document.getElementById('danishIntelligenceScreen');
+const danishIntelligencePlayerName = document.getElementById('danishIntelligencePlayerName');
+const danishIntelligencePublicMessage = document.getElementById('danishIntelligencePublicMessage');
+const danishIntelligencePrivateScreen = document.getElementById('danishIntelligencePrivateScreen');
+const danishIntelligencePrivateMessage1 = document.getElementById('danishIntelligencePrivateMessage1');
+const danishIntelligencePrivateMessage3 = document.getElementById('danishIntelligencePrivateMessage3');
+
+socket.on('publicDanishIntelligence', (playerName) => {
+    danishIntelligencePlayerName.textContent = playerName;
+    danishIntelligencePublicMessage.textContent = playerName + ' intercepts a transmission with two names: one is a VIRUS agent and the other is not.';
+
+    danishIntelligenceScreen.classList.remove('hidden');
+    danishIntelligencePublicMessage.classList.remove('hidden');
+});
+
+socket.on('privateDanishIntelligence', (playerName, tippedPlayerNames) => {
+    setTimeout(() => {
+        danishIntelligencePublicMessage.classList.add('hidden');
+    }, 5000);
+
+    danishIntelligencePrivateMessage1.textContent = 'The transmission names ' + tippedPlayerNames[0] + ' and ' + tippedPlayerNames[1] + '. One of them is a VIRUS agent and the other is not. ' +
+                                                    'Too bad you aren’t good enough at Danish to know who is on what team.';
+    danishIntelligencePrivateMessage3.textContent = tippedPlayerNames[0] + ' & ' + tippedPlayerNames[1];
+    danishIntelligencePrivateScreen.classList.remove('hidden');
+
+    setTimeout(() => {
+        danishIntelligencePrivateScreen.classList.add('hidden');
+        socket.emit('requestFinishDanishIntelligence');
+    }, 5000);
+});
+
+socket.on('finishDanishIntelligence', () => {
+    danishIntelligenceScreen.classList.add('hidden');
+    danishIntelligencePublicMessage.classList.add('hidden');
+    waitingOperationScreen.classList.remove('hidden');
+    setTimeout(() => {
+        waitingOperationScreen.classList.add('hidden');
+    }, 5000);
+
+    socket.emit('currentOperationCompleted');
 });

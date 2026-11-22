@@ -505,17 +505,99 @@ io.on('connection', (socket) => {
                 io.to(player.id).emit('missionBriefingReadySuccess')
             });
             missionBriefingReadiedPlayers = 0;
+
+            //OPERATION PHASE STARTS HERE
+
+            allocateOperations(currentSession);
+            for (let i = 0; i < currentSession.players.length; i++) {
+                let lastOperation = false;
+                const initialPlayerID = currentSession.players[i].id;
+                const initialPlayerOperation = currentSession.players[i].operation;
+                const activeSocket = io.sockets.sockets.get(initialPlayerID);
+
+                if (i === 0) {
+                    const nextPlayerID = currentSession.players[i+1].id;
+                    const nextPlayerOperation = currentSession.players[i+1].operation;
+
+                    currentSession.players.forEach((player) => {
+                        io.to(player.id).emit('operationTurn', initialPlayerOperation, initialPlayerID);
+                    });
+
+                    activeSocket.once('currentOperationCompleted', () => {
+                        currentSession.players.forEach((player) => {
+                            io.to(player.id).emit('operationTurn', nextPlayerOperation, nextPlayerID);
+                        });
+                    });
+                } else if (i+1 !== currentSession.players.length) {
+                    if (i+1 === (currentSession.players.length - 1)) {
+                        lastOperation = true;
+                    } else {
+                        const nextPlayerID = currentSession.players[i+1].id;
+                        const nextPlayerOperation = currentSession.players[i+1].operation;
+
+                        activeSocket.once('currentOperationCompleted', () => {
+                            currentSession.players.forEach((player) => {
+                                io.to(player.id).emit('operationTurn', nextPlayerOperation, nextPlayerID);
+                            });
+                        });
+                    }
+                }
+
+                if (lastOperation) {
+                    const nextPlayerID = currentSession.players[i+1].id;
+                    const nextPlayerOperation = currentSession.players[i+1].operation;
+
+                    activeSocket.once('currentOperationCompleted', () => {
+                        currentSession.players.forEach((player) => {
+                            io.to(player.id).emit('finalOperationTurn', nextPlayerOperation, nextPlayerID);
+                        });
+                    });
+                }
+            }
         }
     });
 
-    socket.on('commenceOperationsPhase', () => {
-        allocateOperations(currentSession);
+    socket.on('requestAnonymousTip', (playerID) => {
+        const { tippedPlayerName, tippedPlayerRole } = AnonymousTip(playerID, currentSession);
+        let playerName;
         currentSession.players.forEach((player) => {
-            player.operation
+            if (player.id === playerID) {
+                playerName = player.name;
+            }
+        });
+
+        currentSession.players.forEach((player) => {
+            io.to(player.id).emit('publicAnonymousTip', playerName);
+        });
+        socket.emit('privateAnonymousTip', playerName, tippedPlayerName, tippedPlayerRole);
+    });
+
+    socket.on('requestFinishAnonymousTip', () => {
+        currentSession.players.forEach((player) => {
+            io.to(player.id).emit('finishAnonymousTip');
         });
     });
 
+    socket.on('requestDanishIntelligence', (playerID) => {
+        const tippedPlayerNames = DanishIntelligence(playerID, currentSession);
+        let playerName;
+        currentSession.players.forEach((player) => {
+            if (player.id === playerID) {
+                playerName = player.name;
+            }
+        });
 
+        currentSession.players.forEach((player) => {
+           io.to(player.id).emit('publicDanishIntelligence', playerName);
+        });
+        socket.emit('privateDanishIntelligence', playerName, tippedPlayerNames);
+    });
+
+    socket.on('requestFinishDanishIntelligence', () => {
+        currentSession.players.forEach((player) => {
+            io.to(player.id).emit('finishDanishIntelligence');
+        });
+    });
 
 });
 

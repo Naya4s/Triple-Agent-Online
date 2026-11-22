@@ -72,14 +72,14 @@
         </div>
 
         <div id="serviceScreen" class="hidden">
-            <img src="assets/service.png" alt="Service logo">
+            <img src="assets/service.png" alt="Service Logo">
             <h3>For the moment you work for The Service.</h3>
             <h3 id="serviceScreenVirusCountText"></h3>
             <h3>To win, you must imprison one of them or anyone they recruit!</h3>
         </div>
 
         <div id="virusScreen" class="hidden">
-            <img src="assets/virus.png" alt="VIRUS logo">
+            <img src="assets/virus.png" alt="VIRUS Logo">
             <h3>For the moment you work for VIRUS. Your mission is to stay hidden and get the agents to imprison one of their own.</h3>
             <h3 id="virusScreenVirusCountText"></h3>
             <ul id="virusScreenVirusPlayers"></ul>
@@ -90,6 +90,33 @@
         <div id="operationsPhaseScreen" class="hidden">
             <h2>OPERATIONS PHASE</h2>
             <p id="operationsPhaseText"></p>
+        </div>
+
+        <div id="waitingOperationScreen" class="hidden">
+            <h2>WAITING FOR NEXT OPERATION...</h2>
+        </div>
+
+        <div id="anonymousTipScreen" class="hidden">
+            <h2 id="anonymousTipPlayerName"></h2>
+            <h1>ANONYMOUS TIP</h1>
+            <h3 id="anonymousTipPublicMessage" class="hidden"></h3>
+
+            <div id="anonymousTipPrivateScreen" class="hidden">
+                <h3 id="anonymousTipPrivateMessage"></h3>
+                <img id="anonymousTipAgencyLogo" src="" alt="">
+            </div>
+        </div>
+
+        <div id="danishIntelligenceScreen" class="hidden">
+            <h2 id="danishIntelligencePlayerName"></h2>
+            <h1>DANISH INTELLIGENCE</h1>
+            <h3 id="danishIntelligencePublicMessage" class="hidden"></h3>
+
+            <div id="danishIntelligencePrivateScreen" class="hidden">
+                <h3 id="danishIntelligencePrivateMessage1"></h3>
+                <h3 id="danishIntelligencePrivateMessage2">One is VIRUS, the other is not:</h3>
+                <h3 id="danishIntelligencePrivateMessage3"></h3>
+            </div>
         </div>
 
         <script src="/socket.io/socket.io.js"></script>
