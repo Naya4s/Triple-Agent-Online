@@ -399,7 +399,8 @@ io.on('connection', (socket) => {
         currentSession = {
             code: generateCode(),
             status: 'waiting',
-            players: [{ id: socket.id, name: playerName, startingRole: null, currentRole: null , operation: null, scapeGoat: false, grudge: null, infatuation: null}]
+            players: [{ id: socket.id, name: playerName, startingRole: null, currentRole: null , operation: null, scapeGoat: false, grudge: null, infatuation: null}],
+            discussionsPhase: false
         };
 
         socket.emit('joining');
@@ -486,7 +487,8 @@ io.on('connection', (socket) => {
         const safeCurrentSession = {
             code: currentSession.code,
             status: currentSession.status,
-            players: currentSession.players.map(player => ({ id: player.id, name: player.name}))
+            players: currentSession.players.map(player => ({ id: player.id, name: player.name})),
+            discussionsPhase: false
         };
 
         io.emit('sessionUpdated', safeCurrentSession, 'started');
@@ -510,7 +512,6 @@ io.on('connection', (socket) => {
 
             allocateOperations(currentSession);
             for (let i = 0; i < currentSession.players.length; i++) {
-                let lastOperation = false;
                 const initialPlayerID = currentSession.players[i].id;
                 const initialPlayerOperation = currentSession.players[i].operation;
                 const activeSocket = io.sockets.sockets.get(initialPlayerID);
@@ -520,36 +521,22 @@ io.on('connection', (socket) => {
                     const nextPlayerOperation = currentSession.players[i+1].operation;
 
                     currentSession.players.forEach((player) => {
-                        io.to(player.id).emit('operationTurn', initialPlayerOperation, initialPlayerID);
+                        io.to(player.id).emit('operationTurn', initialPlayerOperation, initialPlayerID, false);
                     });
 
-                    activeSocket.once('currentOperationCompleted', () => {
+                    activeSocket.once('requestNextOperation', () => {
                         currentSession.players.forEach((player) => {
-                            io.to(player.id).emit('operationTurn', nextPlayerOperation, nextPlayerID);
+                            io.to(player.id).emit('operationTurn', nextPlayerOperation, nextPlayerID, false);
                         });
                     });
                 } else if (i+1 !== currentSession.players.length) {
-                    if (i+1 === (currentSession.players.length - 1)) {
-                        lastOperation = true;
-                    } else {
-                        const nextPlayerID = currentSession.players[i+1].id;
-                        const nextPlayerOperation = currentSession.players[i+1].operation;
-
-                        activeSocket.once('currentOperationCompleted', () => {
-                            currentSession.players.forEach((player) => {
-                                io.to(player.id).emit('operationTurn', nextPlayerOperation, nextPlayerID);
-                            });
-                        });
-                    }
-                }
-
-                if (lastOperation) {
                     const nextPlayerID = currentSession.players[i+1].id;
                     const nextPlayerOperation = currentSession.players[i+1].operation;
+                    const nextIsLast = (i+1 === currentSession.players.length - 1);
 
-                    activeSocket.once('currentOperationCompleted', () => {
+                    activeSocket.once('requestNextOperation', () => {
                         currentSession.players.forEach((player) => {
-                            io.to(player.id).emit('finalOperationTurn', nextPlayerOperation, nextPlayerID);
+                            io.to(player.id).emit('operationTurn', nextPlayerOperation, nextPlayerID, nextIsLast);
                         });
                     });
                 }
@@ -557,7 +544,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('requestAnonymousTip', (playerID) => {
+    socket.on('requestAnonymousTip', (playerID, lastOperation) => {
         const { tippedPlayerName, tippedPlayerRole } = AnonymousTip(playerID, currentSession);
         let playerName;
         currentSession.players.forEach((player) => {
@@ -569,16 +556,16 @@ io.on('connection', (socket) => {
         currentSession.players.forEach((player) => {
             io.to(player.id).emit('publicAnonymousTip', playerName);
         });
-        socket.emit('privateAnonymousTip', playerName, tippedPlayerName, tippedPlayerRole);
+        socket.emit('privateAnonymousTip', playerName, tippedPlayerName, tippedPlayerRole, playerID, lastOperation);
     });
 
-    socket.on('requestFinishAnonymousTip', () => {
+    socket.on('requestFinishAnonymousTip', (playerID, lastOperation) => {
         currentSession.players.forEach((player) => {
-            io.to(player.id).emit('finishAnonymousTip');
+            io.to(player.id).emit('finishAnonymousTip', playerID, lastOperation);
         });
     });
 
-    socket.on('requestDanishIntelligence', (playerID) => {
+    socket.on('requestDanishIntelligence', (playerID, lastOperation) => {
         const tippedPlayerNames = DanishIntelligence(playerID, currentSession);
         let playerName;
         currentSession.players.forEach((player) => {
@@ -590,12 +577,12 @@ io.on('connection', (socket) => {
         currentSession.players.forEach((player) => {
            io.to(player.id).emit('publicDanishIntelligence', playerName);
         });
-        socket.emit('privateDanishIntelligence', playerName, tippedPlayerNames);
+        socket.emit('privateDanishIntelligence', playerName, tippedPlayerNames, playerID, lastOperation);
     });
 
-    socket.on('requestFinishDanishIntelligence', () => {
+    socket.on('requestFinishDanishIntelligence', (playerID, lastOperation) => {
         currentSession.players.forEach((player) => {
-            io.to(player.id).emit('finishDanishIntelligence');
+            io.to(player.id).emit('finishDanishIntelligence', playerID, lastOperation);
         });
     });
 

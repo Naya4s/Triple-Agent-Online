@@ -297,34 +297,34 @@ socket.on('missionBriefingReadySuccess', () => {
 
 });
 
-socket.on('operationTurn', (operation, playerID) => {
+socket.on('operationTurn', (operation, playerID, lastOperationTurn) => {
     if (socket.id !== playerID) {
         return;
     }
 
     switch (operation) {
         case 'anonymousTip':
-            socket.emit('requestAnonymousTip', playerID);
+            socket.emit('requestAnonymousTip', playerID, lastOperationTurn);
             break;
 
         case 'danishIntelligence':
-            socket.emit('requestDanishIntelligence', playerID);
+            socket.emit('requestDanishIntelligence', playerID, lastOperationTurn);
             break;
 
         case 'oldPhotographs':
-            socket.emit('requestOldPhotographs', playerID);
+            socket.emit('requestOldPhotographs', playerID, lastOperationTurn);
             break;
 
         case 'confession':
-            socket.emit('requestConfession', playerID);
+            socket.emit('requestConfession', playerID, lastOperationTurn);
             break;
 
         case 'secretIntel':
-            socket.emit('requestSecretIntel', playerID);
+            socket.emit('requestSecretIntel', playerID, lastOperationTurn);
             break;
 
         case 'hiddenAgenda':
-            socket.emit('requestHiddenAgenda', playerID);
+            socket.emit('requestHiddenAgenda', playerID, lastOperationTurn);
             break;
     }
 });
@@ -349,7 +349,7 @@ socket.on('publicAnonymousTip', (playerName) => {
     anonymousTipPublicMessage.classList.remove('hidden');
 });
 
-socket.on('privateAnonymousTip', (playerName, tippedPlayerName, tippedPlayerRole) => {
+socket.on('privateAnonymousTip', (playerName, tippedPlayerName, tippedPlayerRole, playerID, lastOperation) => {
     setTimeout(() => {
         anonymousTipPublicMessage.classList.add('hidden');
         }, 5000);
@@ -361,19 +361,25 @@ socket.on('privateAnonymousTip', (playerName, tippedPlayerName, tippedPlayerRole
 
     setTimeout(() => {
         anonymousTipPrivateScreen.classList.add('hidden');
-        socket.emit('requestFinishAnonymousTip');
+        socket.emit('requestFinishAnonymousTip', playerID, lastOperation);
     }, 5000);
 });
 
-socket.on('finishAnonymousTip', () => {
+socket.on('finishAnonymousTip', (playerID, lastOperation) => {
     anonymousTipScreen.classList.add('hidden');
     anonymousTipPublicMessage.classList.add('hidden');
-    waitingOperationScreen.classList.remove('hidden');
-    setTimeout(() => {
-        waitingOperationScreen.classList.add('hidden');
-    }, 5000);
 
-    socket.emit('currentOperationCompleted');
+    if (lastOperation) {
+
+    } else {
+        waitingOperationScreen.classList.remove('hidden');
+        setTimeout(() => {
+            waitingOperationScreen.classList.add('hidden');
+            if (playerID === socket.id) {
+                socket.emit('requestNextOperation');
+            }
+        }, 5000);
+    }
 });
 
 const danishIntelligenceScreen = document.getElementById('danishIntelligenceScreen');
@@ -391,7 +397,7 @@ socket.on('publicDanishIntelligence', (playerName) => {
     danishIntelligencePublicMessage.classList.remove('hidden');
 });
 
-socket.on('privateDanishIntelligence', (playerName, tippedPlayerNames) => {
+socket.on('privateDanishIntelligence', (playerName, tippedPlayerNames, playerID, lastOperation) => {
     setTimeout(() => {
         danishIntelligencePublicMessage.classList.add('hidden');
     }, 5000);
@@ -403,17 +409,23 @@ socket.on('privateDanishIntelligence', (playerName, tippedPlayerNames) => {
 
     setTimeout(() => {
         danishIntelligencePrivateScreen.classList.add('hidden');
-        socket.emit('requestFinishDanishIntelligence');
+        socket.emit('requestFinishDanishIntelligence', playerID, lastOperation);
     }, 5000);
 });
 
-socket.on('finishDanishIntelligence', () => {
+socket.on('finishDanishIntelligence', (playerID, lastOperation) => {
     danishIntelligenceScreen.classList.add('hidden');
     danishIntelligencePublicMessage.classList.add('hidden');
-    waitingOperationScreen.classList.remove('hidden');
-    setTimeout(() => {
-        waitingOperationScreen.classList.add('hidden');
-    }, 5000);
 
-    socket.emit('currentOperationCompleted');
+    if (lastOperation) {
+
+    } else {
+        waitingOperationScreen.classList.remove('hidden');
+        setTimeout(() => {
+            waitingOperationScreen.classList.add('hidden');
+            if (playerID === socket.id) {
+                socket.emit('requestNextOperation');
+            }
+        }, 5000);
+    }
 });
